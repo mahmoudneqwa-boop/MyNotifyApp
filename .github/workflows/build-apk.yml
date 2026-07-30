@@ -15,13 +15,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Build Android APK with PWABuilder
-        uses: pwa-builder/pwa-action@v1
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
         with:
-          manifest-url: './manifest.json'
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Bubblewrap CLI
+        run: npm install -g @bubblewrap/cli
+
+      - name: Initialize and Build APK
+        run: |
+          yes | npx @bubblewrap/cli init --manifest=./manifest.json
+          yes | npx @bubblewrap/cli build
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AlarmApp-APK
-          path: '**/*.apk'
+          path: '*.apk'
