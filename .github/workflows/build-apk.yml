@@ -26,6 +26,12 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Prepare Web Assets Directory
+        run: |
+          mkdir dist
+          cp -r index.html manifest.json *.js *.css *.png *.jpg dist/ 2>/dev/null || cp -r * dist/ 2>/dev/null || true
+          rm -rf dist/dist dist/.git dist/.github
+
       - name: Initialize NPM & Install Capacitor Packages
         run: |
           npm init -y
@@ -33,7 +39,7 @@ jobs:
 
       - name: Build Web & Package App
         run: |
-          npx cap init "My Notify App" com.mynotify.app --web-dir .
+          npx cap init "My Notify App" com.mynotify.app --web-dir dist
           npx cap add android
           npx cap sync android
 
