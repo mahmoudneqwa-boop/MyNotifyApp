@@ -26,8 +26,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Capacitor CLI
-        run: npm install -g @capacitor/cli @capacitor/core
+      - name: Initialize NPM & Install Capacitor Packages
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Build Web & Package App
         run: |
