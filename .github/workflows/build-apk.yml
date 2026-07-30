@@ -15,6 +15,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -23,10 +29,10 @@ jobs:
       - name: Install Bubblewrap CLI
         run: npm install -g @bubblewrap/cli
 
-      - name: Initialize & Build APK
+      - name: Generate TWA Config & Build APK
         run: |
-          bubblewrap init --manifest=./manifest.json
-          bubblewrap build
+          npx @bubblewrap/cli init --manifest=./manifest.json --skipConfig
+          npx @bubblewrap/cli build --skipKeytool
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
