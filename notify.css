@@ -1,0 +1,503 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Cairo', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: #0f172a;
+    color: #f8fafc;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.bg-glow {
+    position: fixed;
+    top: -100px;
+    right: -100px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(0,0,0,0) 70%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Header */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: #38bdf8;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.icon-btn:active {
+    transform: scale(0.95);
+}
+
+.clock-mini {
+    font-weight: 700;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+/* Sidebar & Overlay */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: -280px;
+    width: 280px;
+    height: 100%;
+    background: #1e293b;
+    z-index: 100;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+    padding: 20px;
+}
+
+.sidebar.active {
+    transform: translateX(-280px);
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.app-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: #38bdf8;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.2s;
+    text-align: right;
+    width: 100%;
+}
+
+.nav-link.active, .nav-link:hover {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    font-weight: 700;
+}
+
+/* Main Content */
+.app-content {
+    padding: 20px;
+    max-width: 500px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card h3 {
+    font-size: 1.1rem;
+    color: #f8fafc;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-group {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.custom-input {
+    width: 100%;
+    padding: 12px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.custom-input:focus {
+    border-color: #38bdf8;
+}
+
+/* اختيار أيام الأسبوع */
+.days-selector {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+}
+
+.day-btn {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    color: #94a3b8;
+}
+
+.day-btn.selected {
+    background: #0284c7;
+    color: #fff;
+    border-color: #38bdf8;
+    font-weight: bold;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.record-controls {
+    display: flex;
+    gap: 10px;
+}
+
+/* الأزرار العامة */
+.btn-primary, .btn-secondary, .btn-danger {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary:active, .btn-secondary:active, .btn-danger:active {
+    transform: scale(0.98);
+}
+
+.btn-primary:disabled, .btn-secondary:disabled, .btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary { background: #0284c7; color: white; }
+.btn-secondary { background: #475569; color: white; }
+.btn-danger { background: #e11d48; color: white; }
+
+.btn-group { 
+    display: flex; 
+    gap: 10px; 
+    width: 100%;
+}
+
+.btn-group .btn-primary, 
+.btn-group .btn-secondary, 
+.btn-group .btn-danger {
+    flex: 1;
+    margin-top: 0;
+}
+
+/* العداد وساعة الإيقاف */
+.timer-display {
+    font-size: 3rem;
+    font-weight: 900;
+    text-align: center;
+    color: #38bdf8;
+    margin: 20px 0;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.timer-inputs { 
+    display: flex; 
+    gap: 10px; 
+    margin-bottom: 15px;
+}
+
+.laps-list {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lap-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #0f172a;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+}
+
+/* القوائم والبطاقات المضافة */
+.list-section {
+    margin-top: 25px;
+}
+
+.list-section h3 {
+    font-size: 1rem;
+    color: #94a3b8;
+    margin-bottom: 12px;
+}
+
+.cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.item-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.item-card.disabled {
+    opacity: 0.5;
+    border-color: #1e293b;
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.item-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+.item-sub {
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.item-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* زر التبديل (Toggle Switch) للتفعيل والتعطيل */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: #334155;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    right: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #0284c7;
+}
+
+input:checked + .slider:before {
+    transform: translateX(-22px);
+}
+
+/* أزرار الإجراءات داخل البطاقة */
+.btn-action-icon {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 5px;
+}
+
+.btn-action-icon:hover {
+    color: #38bdf8;
+}
+
+.btn-action-icon.delete:hover {
+    color: #e11d48;
+}
+
+/* Modal Ringing & Edit Overlay */
+.ring-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.95);
+    z-index: 999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(8px);
+}
+
+.ring-modal.active {
+    display: flex;
+}
+
+.ring-box {
+    text-align: center;
+    background: #1e293b;
+    padding: 30px;
+    border-radius: 20px;
+    border: 2px solid #e11d48;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(225, 29, 72, 0.3);
+}
+
+.bell-animation {
+    font-size: 4rem;
+    color: #e11d48;
+    margin-bottom: 15px;
+}
+
+/* تحسينات لشاشات الهواتف الصغرى */
+@media (max-width: 360px) {
+    .app-content {
+        padding: 12px;
+    }
+    
+    .day-btn {
+        font-size: 0.75rem;
+        padding: 6px 0;
+    }
+
+    .timer-display {
+        font-size: 2.5rem;
+    }
+}

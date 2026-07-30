@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Notify - المنبه والتنبيهات</title>
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="notify.css">
+<!-- ربط ملف الـ Manifest (مهم جداً لتحويل APK) -->
+<link rel="manifest" href="manifest.json">
+
+<!-- تحديد لون شريط النظام العلوي ليناسب تصميم التطبيق -->
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- أيقونات التطبيق للمتصفح وأجهزة Apple -->
+<link rel="icon" type="image/png" sizes="512x512" href="iconf.png">
+<link rel="apple-touch-icon" href="iconf.png">
+</head>
+<body>
+
+    <div class="bg-glow"></div>
+
+    <!-- Header -->
+    <header class="app-header">
+        <button id="menuBtn" class="icon-btn"><i class="fa-solid fa-bars-staggered"></i></button>
+        <h1 id="pageTitle">المنبه</h1>
+        <div class="clock-mini" id="miniClock">00:00</div>
+    </header>
+
+    <!-- Sidebar & Overlay -->
+    <div id="overlay" class="overlay"></div>
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="app-logo">
+                <i class="fa-solid fa-bell-concierge"></i>
+                <span>My Notify Pro</span>
+            </div>
+            <button id="closeMenuBtn" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <button class="nav-link active" data-tab="tab-alarm">
+                <i class="fa-solid fa-clock"></i> المنبه العادي
+            </button>
+            <button class="nav-link" data-tab="tab-notify">
+                <i class="fa-solid fa-bullhorn"></i> تنبيهاتي الصوتية
+            </button>
+            <button class="nav-link" data-tab="tab-timer">
+                <i class="fa-solid fa-hourglass-half"></i> العداد (Timer)
+            </button>
+            <button class="nav-link" data-tab="tab-stopwatch">
+                <i class="fa-solid fa-stopwatch"></i> ساعة الإيقاف
+            </button>
+        </nav>
+    </aside>
+
+    <!-- App Main Content -->
+    <main class="app-content">
+
+        <!-- 1. قسم المنبه العادي -->
+        <section id="tab-alarm" class="tab-content active">
+            <div class="card add-card">
+                <h3><i class="fa-solid fa-plus-circle"></i> إضافة منبه جديد</h3>
+                
+                <div class="input-group">
+                    <label>الوقت:</label>
+                    <input type="time" id="alarmTime" class="custom-input">
+                </div>
+
+                <!-- تكرار الأيام -->
+                <div class="input-group">
+                    <label>تكرار الأيام (اتركه بدون تحديد لمنبه مرة واحدة):</label>
+                    <div class="days-selector">
+                        <span class="day-btn" data-day="0">أح</span>
+                        <span class="day-btn" data-day="1">إث</span>
+                        <span class="day-btn" data-day="2">ثل</span>
+                        <span class="day-btn" data-day="3">أر</span>
+                        <span class="day-btn" data-day="4">خم</span>
+                        <span class="day-btn" data-day="5">جم</span>
+                        <span class="day-btn" data-day="6">سب</span>
+                    </div>
+                </div>
+
+                <!-- تحدي الإيقاف -->
+                <div class="input-group">
+                    <label>تحدي إيقاف المنبه (Alarm Mission):</label>
+                    <select id="alarmMission" class="custom-input">
+                        <option value="none">بدون تحدي (إيقاف مباشر)</option>
+                        <option value="math">حل مسألة حسابية</option>
+                        <option value="text">إعادة كتابة جملة تحفيزية</option>
+                    </select>
+                </div>
+
+                <!-- النغمة والصوت التصاعدي -->
+                <div class="input-group">
+                    <label>نغمة المنبه:</label>
+                    <select id="alarmSoundSelect" class="custom-input">
+                        <option value="digital">ديجيتال (Digital Beep)</option>
+                        <option value="bell">جرس كلاسيك (Classic Bell)</option>
+                    </select>
+                </div>
+
+                <div class="input-group checkbox-group">
+                    <label><input type="checkbox" id="gentleWake"> تفعيل الصوت التصاعدي (Gentle Wake)</label>
+                </div>
+
+                <button id="addAlarmBtn" class="btn-primary"><i class="fa-solid fa-check"></i> حفظ المنبه</button>
+            </div>
+
+            <div class="list-section">
+                <h3>منبهاتي الحالية</h3>
+                <div id="alarmsList" class="cards-list"></div>
+            </div>
+        </section>
+
+        <!-- 2. قسم التنبيهات الصوتية -->
+        <section id="tab-notify" class="tab-content">
+            <div class="card add-card">
+                <h3><i class="fa-solid fa-microphone-lines"></i> إضافة تنبيه صوتی مخصص</h3>
+                
+                <div class="input-group">
+                    <label>تاريخ ووقت التنبيه:</label>
+                    <input type="datetime-local" id="notifyDateTime" class="custom-input">
+                </div>
+
+                <div class="input-group">
+                    <label>مصدر الصوت:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="soundType" value="tts" checked> نطق آلي للنص</label>
+                        <label><input type="radio" name="soundType" value="record"> تسجيل صوتي مباشر</label>
+                        <label><input type="radio" name="soundType" value="custom"> رفع ملف صوتي (MP3)</label>
+                    </div>
+                </div>
+
+                <!-- 1. Text To Speech Input -->
+                <div id="ttsInputBox" class="input-group">
+                    <label>الجملة المراد نطقها:</label>
+                    <input type="text" id="ttsText" class="custom-input" placeholder="مثال: قوم عشان عندك سكشن الآن">
+                    <label style="margin-top: 8px;">
+                        <input type="checkbox" id="announceTimeCheck" checked> نطق الوقت الحالي بعد الجملة تلقائياً
+                    </label>
+                </div>
+
+                <!-- 2. Direct Voice Recording Input -->
+                <div id="recordInputBox" class="input-group" style="display: none;">
+                    <label>تسجيل صوتك المباشر:</label>
+                    <div class="record-controls">
+                        <button id="startRecBtn" class="btn-secondary"><i class="fa-solid fa-microphone"></i> تسجيل</button>
+                        <button id="stopRecBtn" class="btn-danger" disabled><i class="fa-solid fa-square"></i> إيقاف</button>
+                    </div>
+                    <audio id="audioPreview" controls style="display:none; margin-top:10px; width:100%;"></audio>
+                </div>
+
+                <!-- 3. Custom File Upload -->
+                <div id="customAudioBox" class="input-group" style="display: none;">
+                    <label>اختر ملف صوتي من الجهاز:</label>
+                    <input type="file" id="customAudioFile" accept="audio/*" class="custom-input">
+                </div>
+
+                <!-- التكرار الذكي -->
+                <div class="input-group">
+                    <label>عدد مرات تكرار التنبيه الصوتي:</label>
+                    <select id="repeatCount" class="custom-input">
+                        <option value="1">مرة واحدة</option>
+                        <option value="2">مرتين</option>
+                        <option value="3">3 مرات</option>
+                        <option value="5">5 مرات</option>
+                    </select>
+                </div>
+
+                <button id="addNotifyBtn" class="btn-primary"><i class="fa-solid fa-plus"></i> جدولة التنبيه</button>
+            </div>
+
+            <div class="list-section">
+                <h3>التنبيهات المجدولة</h3>
+                <div id="notifyList" class="cards-list"></div>
+            </div>
+        </section>
+
+        <!-- 3. قسم العداد (Timer) -->
+        <section id="tab-timer" class="tab-content">
+            <div class="card timer-card">
+                <div class="timer-display" id="timerDisplay">00:00:00</div>
+                <div class="timer-inputs">
+                    <input type="number" id="timerMin" placeholder="الدقائق" min="0" max="59" class="custom-input">
+                    <input type="number" id="timerSec" placeholder="الثواني" min="0" max="59" class="custom-input">
+                </div>
+                <div class="btn-group">
+                    <button id="startTimerBtn" class="btn-primary"><i class="fa-solid fa-play"></i> بدء</button>
+                    <button id="pauseTimerBtn" class="btn-secondary"><i class="fa-solid fa-pause"></i> إيقاف</button>
+                    <button id="resetTimerBtn" class="btn-danger"><i class="fa-solid fa-rotate-right"></i> إعادة</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. قسم ساعة الإيقاف (Stopwatch) -->
+        <section id="tab-stopwatch" class="tab-content">
+            <div class="card stopwatch-card">
+                <div class="timer-display" id="swDisplay">00:00.00</div>
+                <div class="btn-group">
+                    <button id="startSwBtn" class="btn-primary"><i class="fa-solid fa-play"></i> تشغيل</button>
+                    <button id="lapSwBtn" class="btn-secondary"><i class="fa-solid fa-flag"></i> دورة</button>
+                    <button id="resetSwBtn" class="btn-danger"><i class="fa-solid fa-rotate-right"></i> تصفير</button>
+                </div>
+                <div id="swLapsList" class="laps-list" style="margin-top:15px;"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Edit Alarm -->
+    <div id="editModal" class="ring-modal">
+        <div class="ring-box" style="border-color: #38bdf8;">
+            <h3><i class="fa-solid fa-pen-to-square"></i> تعديل المنبه</h3>
+            <input type="hidden" id="editAlarmId">
+            
+            <div class="input-group" style="text-align: right;">
+                <label>الوقت:</label>
+                <input type="time" id="editAlarmTime" class="custom-input">
+            </div>
+
+            <div class="input-group" style="text-align: right;">
+                <label>تكرار الأيام:</label>
+                <div class="days-selector">
+                    <span class="day-btn edit-day-btn" data-day="0">أحد</span>
+                    <span class="day-btn edit-day-btn" data-day="1">اثنين</span>
+                    <span class="day-btn edit-day-btn" data-day="2">ثلاثاء</span>
+                    <span class="day-btn edit-day-btn" data-day="3">أربعاء</span>
+                    <span class="day-btn edit-day-btn" data-day="4">خميس</span>
+                    <span class="day-btn edit-day-btn" data-day="5">جمعه</span>
+                    <span class="day-btn edit-day-btn" data-day="6">سب</span>
+                </div>
+            </div>
+
+            <div class="input-group" style="text-align: right;">
+                <label>تحدي الإيقاف:</label>
+                <select id="editAlarmMission" class="custom-input">
+                    <option value="none">بدون تحدي (إيقاف مباشر)</option>
+                    <option value="math">حل مسألة حسابية</option>
+                    <option value="text">إعادة كتابة جملة تحفيزية</option>
+                </select>
+            </div>
+
+            <div class="input-group style="text-align: right;">
+                <label>النغمة:</label>
+                <select id="editAlarmSoundSelect" class="custom-input">
+                    <option value="digital">ديجيتال (Digital Beep)</option>
+                    <option value="bell">جرس كلاسيك (Classic Bell)</option>
+                </select>
+            </div>
+
+            <div class="input-group checkbox-group" style="text-align: right;">
+                <label><input type="checkbox" id="editGentleWake"> صوت تصاعدي</label>
+            </div>
+
+            <div class="btn-group" style="margin-top: 20px;">
+                <button id="saveEditAlarmBtn" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
+                <button id="cancelEditAlarmBtn" class="btn-secondary"><i class="fa-solid fa-xmark"></i> إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ringing Overlay -->
+    <div id="ringModal" class="ring-modal">
+        <div class="ring-box">
+            <div class="bell-animation"><i class="fa-solid fa-bell fa-bounce"></i></div>
+            <h2 id="ringTitle">تنبيه!</h2>
+            <p id="ringMessage" style="margin: 10px 0; color: #cbd5e1;">حان الوقت الآن!</p>
+            
+            <!-- قسم تحديات إيقاف المنبه -->
+            <div id="missionBox" style="display: none; margin-top: 15px;">
+                <p id="missionQuestion" style="font-weight: bold; color: #38bdf8;"></p>
+                <input type="text" id="missionAnswer" class="custom-input" placeholder="اكتب الإجابة هنا لإيقاف المنبه..." style="margin-top: 8px;">
+            </div>
+
+            <div class="btn-group" style="margin-top: 20px;">
+                <button id="snoozeBtn" class="btn-secondary"><i class="fa-solid fa-bed"></i> غفوة (5 دقائق)</button>
+                <button id="stopRingBtn" class="btn-danger"><i class="fa-solid fa-power-off"></i> إيقاف</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="scriptm.js"></script>
+</body>
+</html>
