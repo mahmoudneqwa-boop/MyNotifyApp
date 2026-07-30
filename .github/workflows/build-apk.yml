@@ -25,7 +25,7 @@ jobs:
 
       - name: Initialize & Build APK
         run: |
-          bubblewrap init --manifest=https://myzekr.me/MyNotifyApp/manifest.json
+          bubblewrap init --manifest=./manifest.json
           bubblewrap build
 
       - name: Upload APK Artifact
