@@ -43,6 +43,22 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Fix Duplicate Kotlin Class Dependencies
+        run: |
+          echo '
+          subprojects {
+              configurations.all {
+                  resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                      if (details.requested.group == "org.jetbrains.kotlin") {
+                          if (details.requested.name == "kotlin-stdlib-jdk7" || details.requested.name == "kotlin-stdlib-jdk8") {
+                              details.useTarget("org.jetbrains.kotlin:kotlin-stdlib:${details.requested.version}")
+                          }
+                      }
+                  }
+              }
+          }
+          ' >> android/build.gradle
+
       - name: Build Android APK with Gradle
         run: |
           cd android
