@@ -2,20 +2,22 @@
   "name": "MyNotify",
   "short_name": "MyNotify",
   "description": "تطبيق منبه وتنبيهات صوتية مخصصة ومهمات استيقاظ",
-  "start_url": "./index.html",
+  "id": "https://mahmoudneqwa-boop.github.io/MyNotifyApp/",
+  "start_url": "https://mahmoudneqwa-boop.github.io/MyNotifyApp/index.html",
+  "scope": "https://mahmoudneqwa-boop.github.io/MyNotifyApp/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "iconf.png",
+      "src": "https://mahmoudneqwa-boop.github.io/MyNotifyApp/iconf.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "iconf.png",
+      "src": "https://mahmoudneqwa-boop.github.io/MyNotifyApp/iconf.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
