@@ -24,18 +24,25 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '20'
 
-      - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
+      - name: Install Capacitor CLI
+        run: npm install -g @capacitor/cli @capacitor/core
 
-      - name: Initialize and Build APK
+      - name: Build Web & Package App
         run: |
-          yes | npx @bubblewrap/cli init --manifest=./manifest.json
-          yes | npx @bubblewrap/cli build
+          npx cap init "My Notify App" com.mynotify.app --web-dir .
+          npx cap add android
+          npx cap sync android
+
+      - name: Build Android APK with Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AlarmApp-APK
-          path: '*.apk'
+          path: 'android/app/build/outputs/apk/debug/*.apk'
