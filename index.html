@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Notify - المنبه والتنبيهات</title>
+    <title>My Notify Pro - المنبه والتنبيهات الذكية</title>
+    
     <!-- FontAwesome & Google Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -27,7 +28,7 @@
 
     <!-- Header -->
     <header class="app-header">
-        <button id="menuBtn" class="icon-btn"><i class="fa-solid fa-bars-staggered"></i></button>
+        <button id="menuBtn" class="icon-btn" aria-label="فتح القائمة"><i class="fa-solid fa-bars-staggered"></i></button>
         <h1 id="pageTitle">ضبط منبه جديد</h1>
         <div class="clock-mini" id="miniClock">00:00</div>
     </header>
@@ -40,7 +41,7 @@
                 <i class="fa-solid fa-bell-concierge"></i>
                 <span>My Notify Pro</span>
             </div>
-            <button id="closeMenuBtn" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+            <button id="closeMenuBtn" class="icon-btn" aria-label="إغلاق القائمة"><i class="fa-solid fa-xmark"></i></button>
         </div>
         
         <nav class="sidebar-nav">
@@ -71,8 +72,8 @@
                 <h3><i class="fa-solid fa-plus-circle"></i> إضافة منبه جديد</h3>
                 
                 <div class="input-group">
-                    <label>الوقت:</label>
-                    <input type="time" id="alarmTime" class="custom-input">
+                    <label for="alarmTime">الوقت:</label>
+                    <input type="time" id="alarmTime" class="custom-input" required>
                 </div>
 
                 <!-- تكرار الأيام -->
@@ -91,7 +92,7 @@
 
                 <!-- تحدي الإيقاف -->
                 <div class="input-group">
-                    <label>تحدي إيقاف المنبه (Alarm Mission):</label>
+                    <label for="alarmMission">تحدي إيقاف المنبه (Alarm Mission):</label>
                     <select id="alarmMission" class="custom-input">
                         <option value="none">بدون تحدي (إيقاف مباشر)</option>
                         <option value="math">حل مسألة حسابية</option>
@@ -101,10 +102,16 @@
 
                 <!-- النغمة والصوت التصاعدي -->
                 <div class="input-group">
-                    <label>نغمة المنبه:</label>
+                    <label for="alarmSoundSelect">نغمة المنبه:</label>
                     <select id="alarmSoundSelect" class="custom-input">
-                        <option value="digital">ديجيتال (Digital Beep)</option>
-                        <option value="bell">جرس كلاسيك (Classic Bell)</option>
+                        <option value="digital">🎧 ديجيتال حديث (Digital Beep)</option>
+                        <option value="bell">🔔 جرس كلاسيك (Classic Bell)</option>
+                        <option value="electronic">⚡ نغمة إلكترونية سريعة (Electronic Fast)</option>
+                        <option value="chime">🌿 نغمة هادئة (Gentle Chime)</option>
+                        <option value="siren">🚨 صفارة إنذار قوية (Heavy Siren)</option>
+                        <option value="piano">🎹 بيانو هادئ (Soft Piano)</option>
+                        <option value="marimba">🎵 ماريمبا مرحة (Marimba Vibe)</option>
+                        <option value="radar">🛰️ رادار فضائي (Space Radar)</option>
                     </select>
                 </div>
 
@@ -130,7 +137,7 @@
                 <h3><i class="fa-solid fa-microphone-lines"></i> إضافة تنبيه صوتی مخصص</h3>
                 
                 <div class="input-group">
-                    <label>تاريخ ووقت التنبيه:</label>
+                    <label for="notifyDateTime">تاريخ ووقت التنبيه:</label>
                     <input type="datetime-local" id="notifyDateTime" class="custom-input">
                 </div>
 
@@ -145,7 +152,7 @@
 
                 <!-- 1. Text To Speech Input -->
                 <div id="ttsInputBox" class="input-group">
-                    <label>الجملة المراد نطقها:</label>
+                    <label for="ttsText">الجملة المراد نطقها:</label>
                     <input type="text" id="ttsText" class="custom-input" placeholder="مثال: قوم عشان عندك سكشن الآن">
                     <label style="margin-top: 8px;">
                         <input type="checkbox" id="announceTimeCheck" checked> نطق الوقت الحالي بعد الجملة تلقائياً
@@ -164,13 +171,13 @@
 
                 <!-- 3. Custom File Upload -->
                 <div id="customAudioBox" class="input-group" style="display: none;">
-                    <label>اختر ملف صوتي من الجهاز:</label>
+                    <label for="customAudioFile">اختر ملف صوتي من الجهاز:</label>
                     <input type="file" id="customAudioFile" accept="audio/*" class="custom-input">
                 </div>
 
                 <!-- التكرار الذكي -->
                 <div class="input-group">
-                    <label>عدد مرات تكرار التنبيه الصوتي:</label>
+                    <label for="repeatCount">عدد مرات تكرار التنبيه الصوتي:</label>
                     <select id="repeatCount" class="custom-input">
                         <option value="1">مرة واحدة</option>
                         <option value="2">مرتين</option>
@@ -226,7 +233,7 @@
             <input type="hidden" id="editAlarmId">
             
             <div class="input-group" style="text-align: right;">
-                <label>الوقت:</label>
+                <label for="editAlarmTime">الوقت:</label>
                 <input type="time" id="editAlarmTime" class="custom-input">
             </div>
 
@@ -244,7 +251,7 @@
             </div>
 
             <div class="input-group" style="text-align: right;">
-                <label>تحدي الإيقاف:</label>
+                <label for="editAlarmMission">تحدي الإيقاف:</label>
                 <select id="editAlarmMission" class="custom-input">
                     <option value="none">بدون تحدي (إيقاف مباشر)</option>
                     <option value="math">حل مسألة حسابية</option>
@@ -253,10 +260,16 @@
             </div>
 
             <div class="input-group" style="text-align: right;">
-                <label>النغمة:</label>
+                <label for="editAlarmSoundSelect">النغمة:</label>
                 <select id="editAlarmSoundSelect" class="custom-input">
-                    <option value="digital">ديجيتال (Digital Beep)</option>
-                    <option value="bell">جرس كلاسيك (Classic Bell)</option>
+                    <option value="digital">🎧 ديجيتال حديث (Digital Beep)</option>
+                    <option value="bell">🔔 جرس كلاسيك (Classic Bell)</option>
+                    <option value="electronic">⚡ نغمة إلكترونية سريعة (Electronic Fast)</option>
+                    <option value="chime">🌿 نغمة هادئة (Gentle Chime)</option>
+                    <option value="siren">🚨 صفارة إنذار قوية (Heavy Siren)</option>
+                    <option value="piano">🎹 بيانو هادئ (Soft Piano)</option>
+                    <option value="marimba">🎵 ماريمبا مرحة (Marimba Vibe)</option>
+                    <option value="radar">🛰️ رادار فضائي (Space Radar)</option>
                 </select>
             </div>
 
@@ -271,7 +284,7 @@
         </div>
     </div>
 
-    <!-- Modal Ringing Overlay -->
+    <!-- Modal Ringing Overlay (شاشة الرنين وتنبيه النظام) -->
     <div id="ringModal" class="ring-modal">
         <div class="ring-box">
             <div class="bell-animation"><i class="fa-solid fa-bell fa-bounce"></i></div>
