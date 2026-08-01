@@ -37,14 +37,24 @@ jobs:
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets --save-dev
 
-      - name: Build Web & Package App
+      # -------------------------------------------------------------
+      # إنشاء ملف capacitor.config.json مباشرة لتفادي خطأ TypeScript
+      # -------------------------------------------------------------
+      - name: Create Capacitor Config File
         run: |
-          npx cap init "My Notify App" com.mynotify.app --web-dir dist
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.mynotify.app",
+            "appName": "My Notify App",
+            "webDir": "dist",
+            "bundledWebRuntime": false
+          }
+          EOF
+
+      - name: Add Android Platform
+        run: |
           npx cap add android
 
-      # -------------------------------------------------------------
-      # خطوة توليد أيقونات التطبيق تلقائياً من صورة iconf.png
-      # -------------------------------------------------------------
       - name: Generate App Icons
         run: |
           mkdir -p assets
