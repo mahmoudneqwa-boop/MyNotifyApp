@@ -20,18 +20,26 @@ if (menuBtn) menuBtn.addEventListener('click', () => toggleSidebar(true));
 if (closeMenuBtn) closeMenuBtn.addEventListener('click', () => toggleSidebar(false));
 if (overlay) overlay.addEventListener('click', () => toggleSidebar(false));
 
+function switchTab(tabId) {
+    const targetLink = document.querySelector(`.nav-link[data-tab="${tabId}"]`);
+    
+    navLinks.forEach(l => l.classList.remove('active'));
+    tabContents.forEach(tab => tab.classList.remove('active'));
+
+    const activeTabEl = document.getElementById(tabId);
+    if (activeTabEl) activeTabEl.classList.add('active');
+
+    if (targetLink) {
+        targetLink.classList.add('active');
+        if (pageTitle) pageTitle.textContent = targetLink.textContent.trim();
+    }
+    toggleSidebar(false);
+}
+
 navLinks.forEach(link => {
     link.addEventListener('click', () => {
         const targetTab = link.getAttribute('data-tab');
-        navLinks.forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-
-        tabContents.forEach(tab => tab.classList.remove('active'));
-        const activeTabEl = document.getElementById(targetTab);
-        if (activeTabEl) activeTabEl.classList.add('active');
-
-        if (pageTitle) pageTitle.textContent = link.textContent.trim();
-        toggleSidebar(false);
+        switchTab(targetTab);
     });
 });
 
@@ -47,6 +55,11 @@ function updateMiniClock() {
 setInterval(updateMiniClock, 1000);
 updateMiniClock();
 
+// طلب صلاحيات الإشعارات عند بدء التطبيق
+if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
 // ==========================================
 // 2. Data Persistence
 // ==========================================
@@ -61,7 +74,7 @@ function saveData() {
 // ==========================================
 // 3. Alarms System & Controls
 // ==========================================
-const dayBtns = document.querySelectorAll('.day-btn');
+const dayBtns = document.querySelectorAll('.day-btn:not(.edit-day-btn)');
 let selectedDays = [];
 
 dayBtns.forEach(btn => {
@@ -93,7 +106,7 @@ if (addAlarmBtn) {
             time: time,
             days: selectedDays.length > 0 ? [...selectedDays] : [0, 1, 2, 3, 4, 5, 6],
             mission: alarmMissionSelect ? alarmMissionSelect.value : 'none',
-            sound: alarmSoundSelect ? alarmSoundSelect.value : 'beep',
+            sound: alarmSoundSelect ? alarmSoundSelect.value : 'digital',
             gentleWake: gentleWakeCheck ? gentleWakeCheck.checked : false,
             snoozeCount: 0,
             active: true
@@ -103,9 +116,12 @@ if (addAlarmBtn) {
         saveData();
         renderAlarms();
 
+        // إعادة ضبط الحقول والتحويل لصفحة المنبهات المسجلة
         if (alarmTimeInput) alarmTimeInput.value = '';
         selectedDays = [];
         dayBtns.forEach(b => b.classList.remove('selected'));
+        
+        switchTab('tab-alarm-list');
     });
 }
 
@@ -114,7 +130,7 @@ function renderAlarms() {
     if (!alarmsList) return;
 
     alarmsList.innerHTML = alarms.length === 0 
-        ? '<p style="color:#64748b; text-align:center;">لا توجد منبهات مضافة.</p>' 
+        ? '<p style="color:#64748b; text-align:center; padding: 20px;">لا توجد منبهات مضافة بعد.</p>' 
         : '';
 
     const dayNames = ["أح", "إث", "ثل", "أر", "خم", "جم", "سب"];
@@ -135,6 +151,9 @@ function renderAlarms() {
                     <input type="checkbox" ${alarm.active ? 'checked' : ''} onchange="toggleAlarmActive(${alarm.id})">
                     <span class="slider"></span>
                 </label>
+                <button onclick="openEditAlarmModal(${alarm.id})" class="btn-action-icon" title="تعديل">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
                 <button onclick="deleteAlarm(${alarm.id})" class="btn-action-icon delete" title="حذف">
                     <i class="fa-solid fa-trash"></i>
                 </button>
@@ -157,6 +176,75 @@ function deleteAlarm(id) {
     alarms = alarms.filter(a => a.id !== id);
     saveData();
     renderAlarms();
+}
+
+// Edit Alarm Logic
+let editSelectedDays = [];
+const editModal = document.getElementById('editModal');
+const editDayBtns = document.querySelectorAll('.edit-day-btn');
+
+editDayBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const day = parseInt(btn.getAttribute('data-day'));
+        if (editSelectedDays.includes(day)) {
+            editSelectedDays = editSelectedDays.filter(d => d !== day);
+            btn.classList.remove('selected');
+        } else {
+            editSelectedDays.push(day);
+            btn.classList.add('selected');
+        }
+    });
+});
+
+function openEditAlarmModal(id) {
+    const alarm = alarms.find(a => a.id === id);
+    if (!alarm) return;
+
+    document.getElementById('editAlarmId').value = alarm.id;
+    document.getElementById('editAlarmTime').value = alarm.time;
+    document.getElementById('editAlarmMission').value = alarm.mission;
+    document.getElementById('editAlarmSoundSelect').value = alarm.sound;
+    document.getElementById('editGentleWake').checked = alarm.gentleWake;
+
+    editSelectedDays = [...alarm.days];
+    editDayBtns.forEach(btn => {
+        const day = parseInt(btn.getAttribute('data-day'));
+        if (editSelectedDays.includes(day)) {
+            btn.classList.add('selected');
+        } else {
+            btn.classList.remove('selected');
+        }
+    });
+
+    if (editModal) editModal.classList.add('active');
+}
+
+const saveEditAlarmBtn = document.getElementById('saveEditAlarmBtn');
+const cancelEditAlarmBtn = document.getElementById('cancelEditAlarmBtn');
+
+if (saveEditAlarmBtn) {
+    saveEditAlarmBtn.addEventListener('click', () => {
+        const id = parseInt(document.getElementById('editAlarmId').value);
+        const alarm = alarms.find(a => a.id === id);
+
+        if (alarm) {
+            alarm.time = document.getElementById('editAlarmTime').value;
+            alarm.mission = document.getElementById('editAlarmMission').value;
+            alarm.sound = document.getElementById('editAlarmSoundSelect').value;
+            alarm.gentleWake = document.getElementById('editGentleWake').checked;
+            alarm.days = editSelectedDays.length > 0 ? [...editSelectedDays] : [0, 1, 2, 3, 4, 5, 6];
+
+            saveData();
+            renderAlarms();
+        }
+        if (editModal) editModal.classList.remove('active');
+    });
+}
+
+if (cancelEditAlarmBtn) {
+    cancelEditAlarmBtn.addEventListener('click', () => {
+        if (editModal) editModal.classList.remove('active');
+    });
 }
 
 // ==========================================
@@ -335,9 +423,16 @@ setInterval(() => {
     });
 }, 1000);
 
+function sendSystemNotification(title, body) {
+    if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body: body, icon: 'iconf.png' });
+    }
+}
+
 function triggerAlarm(alarm) {
     isRinging = true;
     if (navigator.vibrate) navigator.vibrate([1000, 500, 1000, 500]);
+    sendSystemNotification("تنبيه المنبه", `حان موعد المنبه: ${alarm.time}`);
 
     const ringTitle = document.getElementById('ringTitle');
     const ringMessage = document.getElementById('ringMessage');
@@ -370,6 +465,7 @@ function triggerAlarm(alarm) {
 function triggerNotification(note) {
     isRinging = true;
     if (navigator.vibrate) navigator.vibrate([500, 500, 500]);
+    sendSystemNotification("تنبيه صوتی مخصص", "لديك تنبيه الآن!");
 
     const ringTitle = document.getElementById('ringTitle');
     const missionBox = document.getElementById('missionBox');
