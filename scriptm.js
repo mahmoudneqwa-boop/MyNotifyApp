@@ -1,5 +1,11 @@
+/**
+ * ============================================================================
+ * Smart Alarm & Notification System - Complete Master Script
+ * ============================================================================
+ */
+
 // ==========================================
-// 1. Navigation & UI Management
+// 1. Navigation, UI & Audio Context Unlocker
 // ==========================================
 const menuBtn = document.getElementById('menuBtn');
 const closeMenuBtn = document.getElementById('closeMenuBtn');
@@ -8,6 +14,31 @@ const overlay = document.getElementById('overlay');
 const pageTitle = document.getElementById('pageTitle');
 const navLinks = document.querySelectorAll('.nav-link');
 const tabContents = document.querySelectorAll('.tab-content');
+
+// Global Audio Context Unlighting for Mobile/Browsers Policy
+let globalAudioCtx = null;
+
+function getAudioContext() {
+    if (!globalAudioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+            globalAudioCtx = new AudioContextClass();
+        }
+    }
+    if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+        globalAudioCtx.resume();
+    }
+    return globalAudioCtx;
+}
+
+// Unlock audio on first user touch/click anywhere
+function unlockAudio() {
+    getAudioContext();
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('touchstart', unlockAudio);
 
 function toggleSidebar(show) {
     if (sidebar && overlay) {
@@ -49,7 +80,8 @@ function updateMiniClock() {
         const now = new Date();
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
-        miniClock.textContent = `${hours}:${minutes}`;
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        miniClock.textContent = `${hours}:${minutes}:${seconds}`;
     }
 }
 setInterval(updateMiniClock, 1000);
@@ -61,14 +93,51 @@ if ("Notification" in window && Notification.permission !== "granted") {
 }
 
 // ==========================================
-// 2. Data Persistence
+// 2. Data Persistence & Settings
 // ==========================================
 let alarms = JSON.parse(localStorage.getItem('my_alarms')) || [];
 let notifications = JSON.parse(localStorage.getItem('my_notifications')) || [];
+let appSettings = JSON.parse(localStorage.getItem('my_app_settings')) || {
+    theme: 'dark',
+    volume: 1.0
+};
 
 function saveData() {
     localStorage.setItem('my_alarms', JSON.stringify(alarms));
     localStorage.setItem('my_notifications', JSON.stringify(notifications));
+    localStorage.setItem('my_app_settings', JSON.stringify(appSettings));
+}
+
+// التصدير والاسترجاع
+function exportBackupData() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ alarms, notifications, appSettings }));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `alarm_backup_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+}
+
+function importBackupData(fileEvent) {
+    const file = fileEvent.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            if (parsed.alarms) alarms = parsed.alarms;
+            if (parsed.notifications) notifications = parsed.notifications;
+            saveData();
+            renderAlarms();
+            renderNotifications();
+            alert("تم استعادة النسخة الاحتياطية بنجاح!");
+        } catch (err) {
+            alert("فشل استرجاع البيانات: الملف غير صالح!");
+        }
+    };
+    reader.readAsText(file);
 }
 
 // ==========================================
@@ -109,7 +178,8 @@ if (addAlarmBtn) {
             sound: alarmSoundSelect ? alarmSoundSelect.value : 'digital',
             gentleWake: gentleWakeCheck ? gentleWakeCheck.checked : false,
             snoozeCount: 0,
-            active: true
+            active: true,
+            lastTriggered: null
         };
 
         alarms.push(newAlarm);
@@ -144,7 +214,7 @@ function renderAlarms() {
         item.innerHTML = `
             <div class="item-info">
                 <div class="item-title">${alarm.time}</div>
-                <div class="item-sub">الأيام: ${daysText} | التحدي: ${alarm.mission}</div>
+                <div class="item-sub">الأيام: ${daysText} | التحدي: ${getMissionLabel(alarm.mission)} | الصوت: ${alarm.sound}</div>
             </div>
             <div class="item-actions">
                 <label class="switch">
@@ -163,6 +233,16 @@ function renderAlarms() {
     });
 }
 
+function getMissionLabel(missionKey) {
+    const map = {
+        'none': 'بدون',
+        'math': 'مسألة رياضية',
+        'text': 'كتابة نص',
+        'memory': 'تحدي الذاكرة'
+    };
+    return map[missionKey] || missionKey;
+}
+
 function toggleAlarmActive(id) {
     const alarm = alarms.find(a => a.id === id);
     if (alarm) {
@@ -178,7 +258,7 @@ function deleteAlarm(id) {
     renderAlarms();
 }
 
-// Edit Alarm Logic
+// Edit Alarm Modal Logic
 let editSelectedDays = [];
 const editModal = document.getElementById('editModal');
 const editDayBtns = document.querySelectorAll('.edit-day-btn');
@@ -200,11 +280,17 @@ function openEditAlarmModal(id) {
     const alarm = alarms.find(a => a.id === id);
     if (!alarm) return;
 
-    document.getElementById('editAlarmId').value = alarm.id;
-    document.getElementById('editAlarmTime').value = alarm.time;
-    document.getElementById('editAlarmMission').value = alarm.mission;
-    document.getElementById('editAlarmSoundSelect').value = alarm.sound;
-    document.getElementById('editGentleWake').checked = alarm.gentleWake;
+    const editIdInput = document.getElementById('editAlarmId');
+    const editTimeInput = document.getElementById('editAlarmTime');
+    const editMissionInput = document.getElementById('editAlarmMission');
+    const editSoundInput = document.getElementById('editAlarmSoundSelect');
+    const editGentleInput = document.getElementById('editGentleWake');
+
+    if (editIdInput) editIdInput.value = alarm.id;
+    if (editTimeInput) editTimeInput.value = alarm.time;
+    if (editMissionInput) editMissionInput.value = alarm.mission;
+    if (editSoundInput) editSoundInput.value = alarm.sound;
+    if (editGentleInput) editGentleInput.checked = alarm.gentleWake;
 
     editSelectedDays = [...alarm.days];
     editDayBtns.forEach(btn => {
@@ -224,7 +310,10 @@ const cancelEditAlarmBtn = document.getElementById('cancelEditAlarmBtn');
 
 if (saveEditAlarmBtn) {
     saveEditAlarmBtn.addEventListener('click', () => {
-        const id = parseInt(document.getElementById('editAlarmId').value);
+        const idInput = document.getElementById('editAlarmId');
+        if (!idInput) return;
+        
+        const id = parseInt(idInput.value);
         const alarm = alarms.find(a => a.id === id);
 
         if (alarm) {
@@ -294,7 +383,7 @@ if (startRecBtn && stopRecBtn) {
             startRecBtn.disabled = true;
             stopRecBtn.disabled = false;
         } catch (err) {
-            alert("يرجى إعطاء صلاحية المايك للتسجيل!");
+            alert("يرجى إعطاء صلاحية المايك لتسجيل الصوت!");
         }
     });
 
@@ -337,7 +426,7 @@ if (addNotifyBtn) {
             const ttsTextInput = document.getElementById('ttsText');
             const announceCheck = document.getElementById('announceTimeCheck');
             const text = ttsTextInput ? ttsTextInput.value.trim() : '';
-            if (!text) return alert("يرجى كتابة الجملة!");
+            if (!text) return alert("يرجى كتابة النص المراد قراءته!");
             payload = { 
                 type: 'tts', 
                 text: text, 
@@ -355,7 +444,8 @@ if (addNotifyBtn) {
             id: Date.now(),
             datetime: datetime,
             payload: payload,
-            repeats: repeats
+            repeats: repeats,
+            triggered: false
         });
 
         saveData();
@@ -379,7 +469,7 @@ function renderNotifications() {
         item.innerHTML = `
             <div class="item-info">
                 <div class="item-title">${new Date(note.datetime).toLocaleString('ar-EG')}</div>
-                <div class="item-sub">تكرار: ${note.repeats} مرات</div>
+                <div class="item-sub">النوع: ${note.payload.type === 'tts' ? 'قراءة نص' : 'ملف/تسجيل صوتي'} | تكرار: ${note.repeats} مرات</div>
             </div>
             <div class="item-actions">
                 <button onclick="deleteNotification(${note.id})" class="btn-action-icon delete" title="حذف">
@@ -400,25 +490,44 @@ function deleteNotification(id) {
 // ==========================================
 // 5. Ringing Engine & Missions Core
 // ==========================================
-let isRinging = false, activeAudio = null, currentMissionAnswer = null, gentleInterval = null, audioCtx = null;
+let isRinging = false;
+let activeAudio = null;
+let currentMissionAnswer = null;
+let gentleInterval = null;
+let beepLoopTimeout = null;
+
 const ringModal = document.getElementById('ringModal');
 
+// Loop checking with timestamp safety to prevent background throttle skips
 setInterval(() => {
     if (isRinging) return;
 
     const now = new Date();
     const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const currentDateStr = now.toISOString().slice(0, 10);
     const currentDay = now.getDay();
 
+    // Check Alarms
     alarms.forEach(alarm => {
-        if (alarm.active && alarm.time === currentTimeStr && alarm.days.includes(currentDay) && now.getSeconds() === 0) {
-            triggerAlarm(alarm);
+        const triggerKey = `${currentDateStr}_${alarm.time}`;
+        if (alarm.active && alarm.time === currentTimeStr && alarm.days.includes(currentDay)) {
+            if (alarm.lastTriggered !== triggerKey) {
+                alarm.lastTriggered = triggerKey;
+                saveData();
+                triggerAlarm(alarm);
+            }
         }
     });
 
+    // Check Notifications
     notifications.forEach(note => {
-        if (Math.abs(now - new Date(note.datetime)) < 1000) {
-            triggerNotification(note);
+        if (!note.triggered) {
+            const noteTime = new Date(note.datetime).getTime();
+            if (Math.abs(now.getTime() - noteTime) <= 2000) {
+                note.triggered = true;
+                saveData();
+                triggerNotification(note);
+            }
         }
     });
 }, 1000);
@@ -441,31 +550,51 @@ function triggerAlarm(alarm) {
     if (ringMessage) ringMessage.textContent = "قوم صحصح يلا!";
     if (ringModal) ringModal.classList.add('active');
 
+    setupMissionUI(alarm.mission);
+    startAlarmSound(alarm.sound, alarm.gentleWake);
+}
+
+function setupMissionUI(missionType) {
     const missionBox = document.getElementById('missionBox');
     const missionQuestion = document.getElementById('missionQuestion');
+    const missionAnswerInput = document.getElementById('missionAnswer');
 
-    if (alarm.mission === 'math') {
+    if (missionAnswerInput) missionAnswerInput.value = '';
+
+    if (missionType === 'math') {
         if (missionBox) missionBox.style.display = 'block';
-        const num1 = Math.floor(Math.random() * 20) + 5;
-        const num2 = Math.floor(Math.random() * 20) + 5;
-        currentMissionAnswer = (num1 + num2).toString();
-        if (missionQuestion) missionQuestion.textContent = `احسب المطلوب لإيقاف المنبه: ${num1} + ${num2} = ?`;
-    } else if (alarm.mission === 'text') {
+        const operators = ['+', '-', '*'];
+        const op = operators[Math.floor(Math.random() * operators.length)];
+        let num1 = Math.floor(Math.random() * 15) + 5;
+        let num2 = Math.floor(Math.random() * 10) + 2;
+
+        if (op === '*') { num1 = Math.floor(Math.random() * 9) + 2; }
+        
+        currentMissionAnswer = eval(`${num1} ${op} ${num2}`).toString();
+        if (missionQuestion) missionQuestion.textContent = `احسب لإيقاف المنبه: ${num1} ${op} ${num2} = ?`;
+    } 
+    else if (missionType === 'text') {
         if (missionBox) missionBox.style.display = 'block';
-        currentMissionAnswer = "أنا صاحي ومستعد";
-        if (missionQuestion) missionQuestion.textContent = `اكتب النص التالي بدقة: "أنا صاحي ومستعد"`;
-    } else {
+        const phrases = ["أنا صاحي ومستعد", "صباح الخير والنشاط", "يوم جديد وإنجاز جديد"];
+        currentMissionAnswer = phrases[Math.floor(Math.random() * phrases.length)];
+        if (missionQuestion) missionQuestion.textContent = `اكتب النص التالي بدقة: "${currentMissionAnswer}"`;
+    } 
+    else if (missionType === 'memory') {
+        if (missionBox) missionBox.style.display = 'block';
+        const code = Math.floor(1000 + Math.random() * 9000).toString();
+        currentMissionAnswer = code;
+        if (missionQuestion) missionQuestion.textContent = `احفظ واكتب الرمز التالي: ${code}`;
+    }
+    else {
         if (missionBox) missionBox.style.display = 'none';
         currentMissionAnswer = null;
     }
-
-    playBeepSound(alarm.gentleWake);
 }
 
 function triggerNotification(note) {
     isRinging = true;
     if (navigator.vibrate) navigator.vibrate([500, 500, 500]);
-    sendSystemNotification("تنبيه صوتی مخصص", "لديك تنبيه الآن!");
+    sendSystemNotification("تنبيه صوتي مخصص", "لديك تنبيه الآن!");
 
     const ringTitle = document.getElementById('ringTitle');
     const missionBox = document.getElementById('missionBox');
@@ -482,16 +611,17 @@ function triggerNotification(note) {
             let msg = note.payload.text;
             if (note.payload.addTime) {
                 const now = new Date();
-                msg += ` .. الساعة الآن ${now.getHours()}:${now.getMinutes()}`;
+                msg += ` .. الساعة الآن ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
             }
             const ringMessage = document.getElementById('ringMessage');
             if (ringMessage) ringMessage.textContent = msg;
 
             const utterance = new SpeechSynthesisUtterance(msg);
             utterance.lang = 'ar-SA';
+            utterance.rate = 0.9;
             utterance.onend = () => {
                 count++;
-                if (count < note.repeats) setTimeout(playRoutine, 4000);
+                if (count < note.repeats && isRinging) setTimeout(playRoutine, 3000);
             };
             window.speechSynthesis.speak(utterance);
         } else {
@@ -499,7 +629,7 @@ function triggerNotification(note) {
             activeAudio.play();
             activeAudio.onended = () => {
                 count++;
-                if (count < note.repeats) setTimeout(playRoutine, 3000);
+                if (count < note.repeats && isRinging) setTimeout(playRoutine, 2000);
             };
         }
     };
@@ -507,31 +637,58 @@ function triggerNotification(note) {
     playRoutine();
 }
 
-function playBeepSound(gentle) {
-    if (!isRinging) return;
+// Custom Synthesizer Sound Engine with AudioContext
+function startAlarmSound(soundType, gentle) {
+    const ctx = getAudioContext();
+    if (!ctx) return;
 
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-
-    let volume = gentle ? 0.1 : 1.0;
-    gain.gain.setValueAtTime(volume, audioCtx.currentTime);
-
+    let currentVol = gentle ? 0.05 : 0.8;
+    
     if (gentle) {
         gentleInterval = setInterval(() => {
-            if (volume < 1.0) {
-                volume += 0.1;
-                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            if (currentVol < 0.9) {
+                currentVol += 0.05;
             }
-        }, 3000);
+        }, 2000);
     }
 
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 1);
+    const playPulse = () => {
+        if (!isRinging) return;
 
-    if (isRinging) setTimeout(() => playBeepSound(false), 1500);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        // Sound Variations
+        if (soundType === 'chime') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+            osc.frequency.exponentialRampToValueAtTime(659.25, ctx.currentTime + 0.3); // E5
+        } else if (soundType === 'radar') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, ctx.currentTime);
+            osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.15);
+        } else if (soundType === 'bell') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, ctx.currentTime);
+        } else {
+            // Default Digital
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+        }
+
+        gain.gain.setValueAtTime(currentVol, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.8);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.8);
+
+        beepLoopTimeout = setTimeout(playPulse, 1200);
+    };
+
+    playPulse();
 }
 
 const stopRingBtn = document.getElementById('stopRingBtn');
@@ -555,7 +712,13 @@ if (snoozeBtn) {
         stopEverything();
         alert("تم تفعيل الغفوة! سيرن المنبه مجدداً بعد 5 دقائق.");
         setTimeout(() => {
-            triggerAlarm({ time: "غفوة", mission: "none", gentleWake: false, days: [0, 1, 2, 3, 4, 5, 6] });
+            triggerAlarm({ 
+                time: "غفوة", 
+                mission: "none", 
+                sound: "digital", 
+                gentleWake: false, 
+                days: [0, 1, 2, 3, 4, 5, 6] 
+            });
         }, 5 * 60 * 1000);
     });
 }
@@ -568,8 +731,9 @@ function stopEverything() {
     if (missionAnswerInput) missionAnswerInput.value = '';
 
     if (activeAudio) { activeAudio.pause(); activeAudio = null; }
-    if (gentleInterval) clearInterval(gentleInterval);
-    if (audioCtx) { audioCtx.close(); audioCtx = null; }
+    if (gentleInterval) { clearInterval(gentleInterval); gentleInterval = null; }
+    if (beepLoopTimeout) { clearTimeout(beepLoopTimeout); beepLoopTimeout = null; }
+    
     window.speechSynthesis.cancel();
 }
 
@@ -592,7 +756,7 @@ if (startTimerBtn) {
         const sec = secInput ? parseInt(secInput.value) || 0 : 0;
 
         if (timerTotalSeconds === 0) timerTotalSeconds = (min * 60) + sec;
-        if (timerTotalSeconds <= 0) return;
+        if (timerTotalSeconds <= 0) return alert("برجاء إدخال وقت صحيح للعداد!");
 
         timerInterval = setInterval(() => {
             timerTotalSeconds--;
@@ -606,10 +770,26 @@ if (startTimerBtn) {
             if (timerTotalSeconds <= 0) {
                 clearInterval(timerInterval);
                 timerInterval = null;
+                playTimerFinishSound();
+                sendSystemNotification("انتهى العداد", "انتهى وقت العداد التنازلي بنجاح!");
                 alert("انتهى العداد (Timer)!");
             }
         }, 1000);
     });
+}
+
+function playTimerFinishSound() {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.5);
 }
 
 if (pauseTimerBtn) {
@@ -630,7 +810,7 @@ if (resetTimerBtn) {
 }
 
 // Stopwatch Logic
-let swInterval = null, swElapsedTime = 0;
+let swInterval = null, swElapsedTime = 0, swLapCount = 0;
 const startSwBtn = document.getElementById('startSwBtn');
 const resetSwBtn = document.getElementById('resetSwBtn');
 const lapSwBtn = document.getElementById('lapSwBtn');
@@ -662,6 +842,7 @@ if (resetSwBtn) {
         clearInterval(swInterval);
         swInterval = null;
         swElapsedTime = 0;
+        swLapCount = 0;
         
         const swDisplay = document.getElementById('swDisplay');
         const swLapsList = document.getElementById('swLapsList');
@@ -675,18 +856,19 @@ if (resetSwBtn) {
 if (lapSwBtn) {
     lapSwBtn.addEventListener('click', () => {
         if (swElapsedTime === 0) return;
+        swLapCount++;
         const swDisplay = document.getElementById('swDisplay');
         const swLapsList = document.getElementById('swLapsList');
         
         if (swDisplay && swLapsList) {
             const lapItem = document.createElement('div');
             lapItem.className = 'lap-item';
-            lapItem.innerHTML = `<span>دورة</span><strong>${swDisplay.textContent}</strong>`;
+            lapItem.innerHTML = `<span>دورة ${swLapCount}</span><strong>${swDisplay.textContent}</strong>`;
             swLapsList.prepend(lapItem);
         }
     });
 }
 
-// Initializing UI Rendering
+// Initializing UI Rendering on Startup
 renderAlarms();
 renderNotifications();
