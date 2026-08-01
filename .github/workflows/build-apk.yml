@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK - My Notify APP
 
 on:
   push:
@@ -12,63 +12,98 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. جلب الكود من المستودع
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # 2. إعداد بيئة Java JDK 21
       - name: Setup Java JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
+      # 3. إعداد بيئة Node.js 20
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      # 4. تسريع البناء عن طريق تخزين ذاكرة Gradle المؤقتة
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # 5. تجهيز مجلد أصول الويب (dist) مع الحفاظ على ملفات التطبيق
       - name: Prepare Web Assets Directory
         run: |
-          mkdir dist
-          cp -r index.html manifest.json *.js *.css *.png *.jpg dist/ 2>/dev/null || cp -r * dist/ 2>/dev/null || true
-          rm -rf dist/dist dist/.git dist/.github
+          mkdir -p dist
+          # نسخ ملفات الويب الأساسية إلى مجلد dist
+          rsync -av --exclude='dist' --exclude='.git' --exclude='.github' ./ dist/ || true
+          rm -rf dist/android dist/node_modules
 
-      - name: Initialize NPM & Install Capacitor Packages
+      # 6. تثبيت حزم Capacitor
+      - name: Install Capacitor Packages
         run: |
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets --save-dev
 
-      # -------------------------------------------------------------
-      # إنشاء ملف capacitor.config.json مباشرة لتفادي خطأ TypeScript
-      # -------------------------------------------------------------
+      # 7. إنشاء ملف إعدادات capacitor.config.json باسم My Notify APP
       - name: Create Capacitor Config File
         run: |
           cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.mynotify.app",
-            "appName": "My Notify App",
+            "appName": "My Notify APP",
             "webDir": "dist",
             "bundledWebRuntime": false
           }
           EOF
 
+      # 8. إضافة منصة أندرويد
       - name: Add Android Platform
         run: |
           npx cap add android
 
-      - name: Generate App Icons
+      # 9. إدارة والحفاظ على صورة الأيقونة وتوليد أحجامها
+      - name: Generate App Icons & Assets
         run: |
           mkdir -p assets
-          cp iconf.png assets/icon.png 2>/dev/null || cp dist/iconf.png assets/icon.png 2>/dev/null || true
-          cp iconf.png assets/icon-only.png 2>/dev/null || cp dist/iconf.png assets/icon-only.png 2>/dev/null || true
-          cp iconf.png assets/icon-foreground.png 2>/dev/null || cp dist/iconf.png assets/icon-foreground.png 2>/dev/null || true
-          cp iconf.png assets/icon-background.png 2>/dev/null || cp dist/iconf.png assets/icon-background.png 2>/dev/null || true
+          
+          # التحقق من مكان وجود أيقونة التطبيق واستخدامها
+          if [ -f "iconf.png" ]; then
+            cp iconf.png assets/icon.png
+          elif [ -f "dist/iconf.png" ]; then
+            cp dist/iconf.png assets/icon.png
+          elif [ -f "icon.png" ]; then
+            cp icon.png assets/icon.png
+          else
+            # إنشاء صورة مؤقتة افتراضية في حال عدم وجود أيقونة لتجنب توقف البناء
+            echo "No icon found, fallback created."
+            curl -s -o assets/icon.png https://via.placeholder.com/512.png
+          fi
+
+          # تجهيز باقي التسميات الخاصة بـ Capacitor Assets
+          cp assets/icon.png assets/icon-only.png
+          cp assets/icon.png assets/icon-foreground.png
+          cp assets/icon.png assets/icon-background.png
+
+          # توليد الأيقونات لمنصة الأندرويد
           npx capacitor-assets generate --android
 
+      # 10. مزامنة الملفات مع مشروع الأندرويد
       - name: Sync Capacitor Android
         run: |
           npx cap sync android
 
-      - name: Fix Duplicate Kotlin Class Dependencies
+      # 11. حل مشكلات التضارب في مكتبات Kotlin و Gradle
+      - name: Fix Kotlin & Gradle Dependencies Conflicts
         run: |
           echo '
           subprojects {
@@ -84,14 +119,16 @@ jobs:
           }
           ' >> android/build.gradle
 
+      # 12. بناء ملف الـ APK النهائي
       - name: Build Android APK with Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
+      # 13. تجهيز وحفظ ملف APK المكتمل كـ Artifact لتنزيله
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AlarmApp-APK
-          path: 'android/app/build/outputs/apk/debug/*.apk'
+          name: My-Notify-APP-Debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
