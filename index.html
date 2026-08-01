@@ -8,17 +8,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="notify.css">
-<!-- ربط ملف الـ Manifest (مهم جداً لتحويل APK) -->
-<link rel="manifest" href="manifest.json">
+    
+    <!-- ربط ملف الـ Manifest (مهم جداً لتحويل APK) -->
+    <link rel="manifest" href="manifest.json">
 
-<!-- تحديد لون شريط النظام العلوي ليناسب تصميم التطبيق -->
-<meta name="theme-color" content="#0f172a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- تحديد لون شريط النظام العلوي ليناسب تصميم التطبيق -->
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<!-- أيقونات التطبيق للمتصفح وأجهزة Apple -->
-<link rel="icon" type="image/png" sizes="512x512" href="iconf.png">
-<link rel="apple-touch-icon" href="iconf.png">
+    <!-- أيقونات التطبيق للمتصفح وأجهزة Apple -->
+    <link rel="icon" type="image/png" sizes="512x512" href="iconf.png">
+    <link rel="apple-touch-icon" href="iconf.png">
 </head>
 <body>
 
@@ -27,7 +28,7 @@
     <!-- Header -->
     <header class="app-header">
         <button id="menuBtn" class="icon-btn"><i class="fa-solid fa-bars-staggered"></i></button>
-        <h1 id="pageTitle">المنبه</h1>
+        <h1 id="pageTitle">ضبط منبه جديد</h1>
         <div class="clock-mini" id="miniClock">00:00</div>
     </header>
 
@@ -44,7 +45,10 @@
         
         <nav class="sidebar-nav">
             <button class="nav-link active" data-tab="tab-alarm">
-                <i class="fa-solid fa-clock"></i> المنبه العادي
+                <i class="fa-solid fa-clock"></i> ضبط منبه جديد
+            </button>
+            <button class="nav-link" data-tab="tab-alarm-list">
+                <i class="fa-solid fa-list-check"></i> قائمة منبهاتي المسجلة
             </button>
             <button class="nav-link" data-tab="tab-notify">
                 <i class="fa-solid fa-bullhorn"></i> تنبيهاتي الصوتية
@@ -61,7 +65,7 @@
     <!-- App Main Content -->
     <main class="app-content">
 
-        <!-- 1. قسم المنبه العادي -->
+        <!-- 1. قسم ضبط منبه جديد -->
         <section id="tab-alarm" class="tab-content active">
             <div class="card add-card">
                 <h3><i class="fa-solid fa-plus-circle"></i> إضافة منبه جديد</h3>
@@ -110,14 +114,17 @@
 
                 <button id="addAlarmBtn" class="btn-primary"><i class="fa-solid fa-check"></i> حفظ المنبه</button>
             </div>
+        </section>
 
+        <!-- 2. قسم سجل/قائمة المنبهات المسجلة (مستقل) -->
+        <section id="tab-alarm-list" class="tab-content">
             <div class="list-section">
-                <h3>منبهاتي الحالية</h3>
+                <h3><i class="fa-solid fa-list"></i> منبهاتي الحالية</h3>
                 <div id="alarmsList" class="cards-list"></div>
             </div>
         </section>
 
-        <!-- 2. قسم التنبيهات الصوتية -->
+        <!-- 3. قسم التنبيهات الصوتية -->
         <section id="tab-notify" class="tab-content">
             <div class="card add-card">
                 <h3><i class="fa-solid fa-microphone-lines"></i> إضافة تنبيه صوتی مخصص</h3>
@@ -181,7 +188,7 @@
             </div>
         </section>
 
-        <!-- 3. قسم العداد (Timer) -->
+        <!-- 4. قسم العداد (Timer) -->
         <section id="tab-timer" class="tab-content">
             <div class="card timer-card">
                 <div class="timer-display" id="timerDisplay">00:00:00</div>
@@ -197,7 +204,7 @@
             </div>
         </section>
 
-        <!-- 4. قسم ساعة الإيقاف (Stopwatch) -->
+        <!-- 5. قسم ساعة الإيقاف (Stopwatch) -->
         <section id="tab-stopwatch" class="tab-content">
             <div class="card stopwatch-card">
                 <div class="timer-display" id="swDisplay">00:00.00</div>
@@ -245,7 +252,7 @@
                 </select>
             </div>
 
-            <div class="input-group style="text-align: right;">
+            <div class="input-group" style="text-align: right;">
                 <label>النغمة:</label>
                 <select id="editAlarmSoundSelect" class="custom-input">
                     <option value="digital">ديجيتال (Digital Beep)</option>
